@@ -390,56 +390,54 @@ export default function VisualizerSettingsModal({
             exit={{ x: 300, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
-            <SheetHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg"
-                    whileHover={{ rotate: 180 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Sliders className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </motion.div>
-                  <div>
-                    <SheetTitle className="text-lg font-semibold">
-                      Visualizer Settings
-                    </SheetTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Customize your audio visualizer experience
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={uploadSettings}
-                        className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer transition-all duration-200 hover:scale-105"
-                      >
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Upload settings</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={downloadSettings}
-                        className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer transition-all duration-200 hover:scale-105"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Download settings</TooltipContent>
-                  </Tooltip>
+            <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg"
+                  whileHover={{ rotate: 180 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Sliders className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </motion.div>
+                <div>
+                  <SheetTitle className="text-lg font-semibold">
+                    Visualizer Settings
+                  </SheetTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Customize your audio visualizer experience
+                  </p>
                 </div>
               </div>
-            </SheetHeader>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={uploadSettings}
+                      className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer transition-all duration-200 hover:scale-105"
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Upload settings</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={downloadSettings}
+                      className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer transition-all duration-200 hover:scale-105"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Download settings</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
               <Tabs defaultValue="presets" className="w-full">
