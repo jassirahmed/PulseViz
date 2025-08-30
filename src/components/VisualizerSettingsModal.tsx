@@ -243,7 +243,10 @@ export default function VisualizerSettingsModal({
     reader.readAsText(file);
   };
 
-  const updateSetting = (key: keyof VisualizerSettings, value: any) => {
+  const updateSetting = (
+    key: keyof VisualizerSettings,
+    value: number | string
+  ) => {
     onSettingsChange({ ...settings, [key]: value });
     setActivePreset(null);
   };
