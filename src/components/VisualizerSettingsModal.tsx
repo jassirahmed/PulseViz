@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { ColorPickerButton } from "./ColorPickerButton";
 
 interface VisualizerSettings {
   bars: number;
@@ -667,7 +668,7 @@ export default function VisualizerSettingsModal({
                               >
                                 <Card className="p-4 hover:shadow-sm transition-all duration-200">
                                   <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center gap-2">
                                       <div className="space-y-1">
                                         <Label className="text-sm font-medium">
                                           {label}
@@ -730,18 +731,13 @@ export default function VisualizerSettingsModal({
                                                 )
                                               }
                                               placeholder="Enter hex color (e.g., #ff0000)"
-                                              className="flex-1 font-mono text-sm"
+                                              className="h-10 flex-1 font-mono text-sm"
                                             />
-                                            <input
-                                              type="color"
+                                            <ColorPickerButton
                                               value={settings[key] as string}
-                                              onChange={(e) =>
-                                                updateSetting(
-                                                  key,
-                                                  e.target.value
-                                                )
+                                              onChange={(color) =>
+                                                updateSetting(key, color)
                                               }
-                                              className="w-12 h-10 rounded-md cursor-pointer border border-border transition-all duration-200 hover:border-primary hover:scale-105"
                                             />
                                           </div>
                                         </motion.div>
