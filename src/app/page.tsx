@@ -45,7 +45,7 @@ export default function VisualizerLabPage() {
   });
 
   // number of instances (1..4)
-  const [count, setCount] = useState<number>(2);
+  const [count, setCount] = useState<number>(1);
   const [settingsList, setSettingsList] = useState<VisualizerSettings[]>(
     Array.from({ length: 2 }, () => ({ ...DEFAULT_SETTINGS }))
   );
@@ -92,7 +92,7 @@ export default function VisualizerLabPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100
-                 dark:from-gray-900 dark:via-gray-800 dark:to-black transition-all duration-700 ease-in-out relative"
+                 dark:from-gray-900 dark:via-gray-800 dark:to-slate-800 transition-all duration-700 ease-in-out relative"
     >
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -197,6 +197,13 @@ export default function VisualizerLabPage() {
               settings={settingsList[i]}
               onOpenSettings={() => setActiveIndex(i)}
               onCopySettings={handleCopySettings}
+              onSettingsChange={(next) =>
+                setSettingsList((prev) => {
+                  const copy = [...prev];
+                  copy[i] = next;
+                  return copy;
+                })
+              }
             />
           ))}
         </div>

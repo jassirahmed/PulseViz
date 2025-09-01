@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint:check": "next lint",
+    "lint": "next lint --fix",
+    "format": "prettier --log-level error --write \"src/**/*.{ts,tsx,js,json}\"",
+    "format:check": "prettier --log-level error --check \"src/**/*.{ts,tsx,js,json}\""
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Download, MicOff } from "lucide-react";
+import { Settings, Download, MicOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ type Props = {
   settings: VisualizerSettings;
   onOpenSettings: () => void;
   onCopySettings?: () => void;
+  onSettingsChange: (settings: VisualizerSettings) => void;
 };
 const defaultSettings: VisualizerSettings = {
   bars: 64,
@@ -49,7 +50,9 @@ export function VisualizerInstance({
   isMuted,
   settings = defaultSettings,
   onOpenSettings,
+  onSettingsChange,
 }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLive, setIsLive] = useState(false);
   const rafRef = useRef<number | null>(null);
@@ -163,6 +166,31 @@ export function VisualizerInstance({
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.settings) {
+          onSettingsChange({ ...settings, ...data.settings });
+        }
+      } catch (error) {
+        console.error("Failed to parse settings file:", error);
+      }
+    };
+    reader.readAsText(file);
+
+    // 🔑 Reset input so same file can be uploaded again
+    event.target.value = "";
+  };
+
+  const uploadSettings = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="flex flex-col items-center space-y-4 w-full">
       <motion.div
@@ -233,6 +261,14 @@ export function VisualizerInstance({
                 className="absolute top-4 right-4 flex gap-2"
               >
                 <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={uploadSettings}
+                  className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 text-white transition-all duration-200 cursor-pointer"
+                >
+                  <Upload className="h-4 w-4" />
+                </Button>
+                <Button
                   onClick={downloadSettings}
                   variant="secondary"
                   size="sm"
@@ -253,6 +289,13 @@ export function VisualizerInstance({
           </CardContent>
         </Card>
       </motion.div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
     </div>
   );
 }
