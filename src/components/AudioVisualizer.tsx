@@ -257,7 +257,7 @@ export default function AudioVisualizer({
             <Volume2 className="h-4 w-4 text-muted-foreground" />
             <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-green-500 to-yellow-500 to-red-500"
+                className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"
                 style={{ width: `${audioLevel * 100}%` }}
                 transition={{ duration: 0.1 }}
               />

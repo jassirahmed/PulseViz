@@ -7,7 +7,6 @@ import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import VisualizerSettingsModal from "@/components/VisualizerSettingsModal";
@@ -41,75 +40,56 @@ export default function VisualizerLabPage() {
     permissionError,
     createAnalyser,
     start,
-  } = useSharedMic({
-    autoStart: true,
-  });
+  } = useSharedMic({ autoStart: true });
 
-  // number of instances (1..4)
-  const [count, setCount] = useState<number>(1);
-  const [settingsList, setSettingsList] = useState<VisualizerSettings[]>(
-    Array.from({ length: 2 }, () => ({ ...DEFAULT_SETTINGS }))
-  );
-
-  // modal state for editing one instance at a time
+  const [count, setCount] = useState(1);
+  const [settingsList, setSettingsList] = useState<VisualizerSettings[]>([
+    { ...DEFAULT_SETTINGS },
+  ]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  // ensure settingsList always matches count
+  // Keep settings in sync with instance count
   useEffect(() => {
     setSettingsList((prev) => {
-      const copy = [...prev];
-      if (copy.length < count) {
-        while (copy.length < count) copy.push({ ...DEFAULT_SETTINGS });
-      } else if (copy.length > count) {
-        copy.length = count;
-      }
-      return copy;
+      const next = [...prev];
+      while (next.length < count) next.push({ ...DEFAULT_SETTINGS });
+      return next.slice(0, count);
     });
   }, [count]);
 
   const analysers = useMemo(() => {
-    if (!audioContext)
-      return Array.from({ length: count }, () => null as AnalyserNode | null);
-
+    if (!audioContext) return Array.from({ length: count }, () => null);
     return Array.from({ length: count }, () =>
       createAnalyser({ fftSize: DEFAULT_SETTINGS.fftSize, smoothing: 0.75 })
     );
   }, [audioContext, count, createAnalyser]);
 
-  const handleCopySettings = () => {
-    toast("Settings copied", {
-      description: "Visualizer settings JSON copied to clipboard.",
-    });
-  };
+  const micStatusLabel = useMemo(
+    () => (permissionError ? "Mic blocked" : isMuted ? "Muted" : "Live"),
+    [permissionError, isMuted]
+  );
 
-  const micStatusLabel = permissionError
-    ? "Mic blocked"
-    : isMuted
-    ? "Muted"
-    : "Live";
-  const micStatusVariant =
-    !permissionError && !isMuted ? "default" : "secondary";
+  const micStatusVariant = useMemo(
+    () => (!permissionError && !isMuted ? "default" : "secondary"),
+    [permissionError, isMuted]
+  );
 
   return (
     <div
       className={cn(
         "min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100",
-        "dark:from-gray-900 dark:via-gray-800 dark:to-slate-800 transition-all duration-700 ease-in-out relative"
+        "dark:from-gray-900 dark:via-gray-800 dark:to-slate-800 transition-all duration-700"
       )}
     >
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="flex flex-col gap-4 w-full px-4 pt-4md:flex-row md:items-center md:justify-between md:gap-6 md:px-6 md:pt-6"
+        className="flex flex-col gap-4 w-full px-4 pt-4 md:flex-row md:items-center md:justify-between md:px-6 md:pt-6"
       >
-        {/* Left: Title + Description */}
-        <div className="space-y-1 text-center md:text-left">
-          <h1
-            className="text-2xl md:text-3xl font-bold tracking-tight 
-                   bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent 
-                   dark:from-cyan-400 dark:to-blue-500"
-          >
+        <div className="text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent dark:from-cyan-400 dark:to-blue-500">
             Pulse Visualizer Lab
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground">
@@ -118,9 +98,7 @@ export default function VisualizerLabPage() {
           </p>
         </div>
 
-        {/* Right: Controls */}
         <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-          {/* Mic Status */}
           <motion.div
             animate={{
               scale: micStatusLabel === "Live" ? [1, 1.05, 1] : 1,
@@ -137,39 +115,33 @@ export default function VisualizerLabPage() {
             </Badge>
           </motion.div>
 
-          {/* Mic Button */}
           {permissionError ? (
             <Button
               onClick={() => start()}
               variant="destructive"
               size="sm"
-              className="rounded-full shadow-sm text-xs px-3 py-1 md:px-4 md:py-2"
+              className="rounded-full"
             >
               Enable mic
             </Button>
           ) : (
-            <Button
-              onClick={() => toggleMute()}
-              variant="outline"
-              size="sm"
-              className="cursor-pointer text-xs px-3 py-1 md:px-4 md:py-2"
-            >
+            <Button onClick={() => toggleMute()} variant="outline" size="sm">
               {isMuted ? (
                 <MicOff className="h-4 w-4 mr-1" />
               ) : (
                 <Mic className="h-4 w-4 mr-1" />
-              )}
+              )}{" "}
               {isMuted ? "Unmute" : "Mute"}
             </Button>
           )}
 
-          {/* Theme Toggle */}
           <ThemeToggle />
         </div>
       </motion.div>
 
       <Separator className="my-6" />
 
+      {/* Instances */}
       <main className="w-full max-w-6xl px-4 md:px-8 pb-10">
         <div className="flex items-center gap-3 mb-6">
           <span className="text-sm text-muted-foreground">Instances:</span>
@@ -180,7 +152,6 @@ export default function VisualizerLabPage() {
                 size="sm"
                 variant={count === n ? "default" : "outline"}
                 onClick={() => setCount(n)}
-                className="cursor-pointer"
               >
                 {n}
               </Button>
@@ -191,12 +162,11 @@ export default function VisualizerLabPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Array.from({ length: count }).map((_, i) => (
             <VisualizerInstance
-              key={i} // ✅ Add key here
+              key={i}
               analyser={analysers[i] || null}
-              isMuted={!!isMuted || !!permissionError}
+              isMuted={isMuted || !!permissionError}
               settings={settingsList[i]}
               onOpenSettings={() => setActiveIndex(i)}
-              onCopySettings={handleCopySettings}
               onSettingsChange={(next) =>
                 setSettingsList((prev) => {
                   const copy = [...prev];
@@ -209,7 +179,6 @@ export default function VisualizerLabPage() {
         </div>
       </main>
 
-      {/* Shared settings modal bound to the currently selected instance */}
       {activeIndex !== null && (
         <VisualizerSettingsModal
           isOpen={activeIndex !== null}
