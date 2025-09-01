@@ -16,6 +16,7 @@ import {
   type VisualizerSettings,
 } from "@/components/visualizer-instance";
 import { useSharedMic } from "@/hooks/use-shared-mic";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_SETTINGS: VisualizerSettings = {
   bars: 60,
@@ -91,17 +92,16 @@ export default function VisualizerLabPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100
-                 dark:from-gray-900 dark:via-gray-800 dark:to-slate-800 transition-all duration-700 ease-in-out relative"
+      className={cn(
+        "min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100",
+        "dark:from-gray-900 dark:via-gray-800 dark:to-slate-800 transition-all duration-700 ease-in-out relative"
+      )}
     >
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="
-    flex flex-col gap-4 w-full px-4 pt-4
-    md:flex-row md:items-center md:justify-between md:gap-6 md:px-6 md:pt-6
-  "
+        className="flex flex-col gap-4 w-full px-4 pt-4md:flex-row md:items-center md:justify-between md:gap-6 md:px-6 md:pt-6"
       >
         {/* Left: Title + Description */}
         <div className="space-y-1 text-center md:text-left">
