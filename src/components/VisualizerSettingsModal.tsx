@@ -36,21 +36,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { ColorPickerButton } from "./ColorPickerButton";
-
-interface VisualizerSettings {
-  bars: number;
-  barLength: number;
-  radiusMultiplier: number;
-  sensitivity: number;
-  maxBarHeight: number;
-  fftSize: number;
-  lineWidth: number;
-  shadowBlur: number;
-  startColor: string;
-  endColor: string;
-  bgStartColor: string;
-  bgEndColor: string;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import type { VisualizerSettings } from "@/components/visualizer-instance";
 
 interface VisualizerSettingsModalProps {
   isOpen: boolean;
@@ -79,7 +73,17 @@ const PRESETS = {
       endColor: "#06b6d4",
       bgStartColor: "#0c4a6e",
       bgEndColor: "#0f172a",
-    },
+      // new
+      shape: "waveform",
+      rotationSpeed: 0,
+      barSpacing: 4,
+      opacity: 0.95,
+      glowColor: null,
+      dynamicColors: false,
+      rainbowMode: false,
+      showPeaks: false,
+      animateBackground: true,
+    } as VisualizerSettings,
   },
   energetic: {
     name: "Energetic Pulse",
@@ -100,7 +104,17 @@ const PRESETS = {
       endColor: "#8b5cf6",
       bgStartColor: "#4c1d95",
       bgEndColor: "#000000",
-    },
+      // new
+      shape: "bars",
+      rotationSpeed: 0,
+      barSpacing: 6,
+      opacity: 1,
+      glowColor: "#ff00aa",
+      dynamicColors: true,
+      rainbowMode: false,
+      showPeaks: true,
+      animateBackground: true,
+    } as VisualizerSettings,
   },
   minimal: {
     name: "Minimal Style",
@@ -121,7 +135,17 @@ const PRESETS = {
       endColor: "#94a3b8",
       bgStartColor: "#1e293b",
       bgEndColor: "#0f172a",
-    },
+      // new
+      shape: "bars",
+      rotationSpeed: 0,
+      barSpacing: 8,
+      opacity: 0.9,
+      glowColor: null,
+      dynamicColors: false,
+      rainbowMode: false,
+      showPeaks: false,
+      animateBackground: false,
+    } as VisualizerSettings,
   },
   neon: {
     name: "Neon Glow",
@@ -142,11 +166,21 @@ const PRESETS = {
       endColor: "#ff0088",
       bgStartColor: "#001122",
       bgEndColor: "#000000",
-    },
+      // new
+      shape: "dots",
+      rotationSpeed: 0,
+      barSpacing: 5,
+      opacity: 1,
+      glowColor: "#00ffaa",
+      dynamicColors: true,
+      rainbowMode: true,
+      showPeaks: true,
+      animateBackground: true,
+    } as VisualizerSettings,
   },
 };
 
-const RESET_DEFAULTS = {
+const RESET_DEFAULTS: VisualizerSettings = {
   bars: 60,
   barLength: 10,
   radiusMultiplier: 0.3,
@@ -159,8 +193,34 @@ const RESET_DEFAULTS = {
   endColor: "#8b5cf6",
   bgStartColor: "#0f172a",
   bgEndColor: "#000000",
+  // new
+  shape: "bars",
+  rotationSpeed: 0,
+  barSpacing: 4,
+  opacity: 1,
+  glowColor: null,
+  dynamicColors: false,
+  rainbowMode: false,
+  showPeaks: true,
+  animateBackground: true,
+};
+type SliderSetting = {
+  label: string;
+  key: keyof VisualizerSettings;
+  min: number;
+  max: number;
+  step: number;
+  description?: string;
+  tip?: string;
+  format?: (value: number) => string;
 };
 
+// 🗂 Group of sliders
+type SliderGroup = {
+  title: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; // better typing for Lucide icons
+  settings: SliderSetting[];
+};
 export default function VisualizerSettingsModal({
   isOpen,
   onClose,
@@ -178,12 +238,8 @@ export default function VisualizerSettingsModal({
     const matchingPreset = Object.entries(PRESETS).find(([_, preset]) => {
       return JSON.stringify(preset.settings) === JSON.stringify(settings);
     });
-
-    if (matchingPreset) {
-      setActivePreset(matchingPreset[0]);
-    } else {
-      setActivePreset(null);
-    }
+    if (matchingPreset) setActivePreset(matchingPreset[0]);
+    else setActivePreset(null);
   }, [settings]);
 
   const applyPreset = (presetName: keyof typeof PRESETS) => {
@@ -201,13 +257,11 @@ export default function VisualizerSettingsModal({
     const settingsData = {
       name: "Custom Visualizer Settings",
       timestamp: new Date().toISOString(),
-      settings: settings,
+      settings,
     };
-
     const blob = new Blob([JSON.stringify(settingsData, null, 2)], {
       type: "application/json",
     });
-
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -218,21 +272,16 @@ export default function VisualizerSettingsModal({
     URL.revokeObjectURL(url);
   };
 
-  const uploadSettings = () => {
-    fileInputRef.current?.click();
-  };
+  const uploadSettings = () => fileInputRef.current?.click();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data.settings) {
-          onSettingsChange({ ...settings, ...data.settings });
-        }
+        if (data.settings) onSettingsChange({ ...settings, ...data.settings });
       } catch (error) {
         console.error("Failed to parse settings file:", error);
       }
@@ -242,13 +291,13 @@ export default function VisualizerSettingsModal({
 
   const updateSetting = (
     key: keyof VisualizerSettings,
-    value: number | string
+    value: number | string | boolean | null | undefined
   ) => {
     onSettingsChange({ ...settings, [key]: value });
     setActivePreset(null);
   };
 
-  const sliderGroups = [
+  const sliderGroups: SliderGroup[] = [
     {
       title: "Structure & Layout",
       icon: Settings2,
@@ -259,8 +308,8 @@ export default function VisualizerSettingsModal({
           min: 12,
           max: 120,
           step: 4,
-          description: "Controls how many bars appear around the circle",
-          tip: "More bars = smoother circle, fewer bars = more distinct segments",
+          description: "How many segments around the circle",
+          tip: "More bars = smoother ring, fewer bars = bolder shapes",
         },
         {
           label: "Inner Circle Size",
@@ -269,8 +318,8 @@ export default function VisualizerSettingsModal({
           max: 0.5,
           step: 0.01,
           format: (v: number) => `${Math.round(v * 100)}%`,
-          description: "Adjusts the size of the inner circle",
-          tip: "Smaller values create a larger center space",
+          description: "Size of the inner ring",
+          tip: "Smaller values create more center space",
         },
         {
           label: "Base Bar Length",
@@ -278,8 +327,18 @@ export default function VisualizerSettingsModal({
           min: 5,
           max: 50,
           step: 1,
-          description: "Minimum length of each bar when no audio is playing",
-          tip: "This creates the baseline circle when music is quiet",
+          description: "Minimum length when audio is quiet",
+          tip: "Controls the baseline circle thickness",
+        },
+        {
+          label: "Bar Gap",
+          key: "barSpacing" as keyof VisualizerSettings,
+          min: 0,
+          max: 20,
+          step: 1,
+          format: (v: number) => `${v.toFixed(0)}px`,
+          description: "Gap between inner ring and visuals",
+          tip: "Creates a small inner space before bars/dots start",
         },
       ],
     },
@@ -294,8 +353,8 @@ export default function VisualizerSettingsModal({
           max: 5,
           step: 0.1,
           format: (v: number) => `${v.toFixed(1)}x`,
-          description: "How responsive the bars are to audio changes",
-          tip: "Higher values make bars react more dramatically to sound",
+          description: "How strongly visuals react to sound",
+          tip: "Higher values increase movement",
         },
         {
           label: "Maximum Bar Height",
@@ -303,8 +362,17 @@ export default function VisualizerSettingsModal({
           min: 5,
           max: 50,
           step: 1,
-          description: "Maximum height bars can reach during loud audio",
-          tip: "Prevents bars from becoming too large and overwhelming",
+          description: "Ceiling for bar length",
+          tip: "Prevents visuals from overwhelming the canvas",
+        },
+        {
+          label: "FFT Size",
+          key: "fftSize" as keyof VisualizerSettings,
+          min: 256,
+          max: 2048,
+          step: 256,
+          description: "Frequency resolution (higher = smoother)",
+          tip: "Requires more CPU at higher values",
         },
       ],
     },
@@ -319,8 +387,8 @@ export default function VisualizerSettingsModal({
           max: 10,
           step: 0.5,
           format: (v: number) => `${v.toFixed(1)}px`,
-          description: "Thickness of each visualizer bar",
-          tip: "Thicker lines are more visible but may overlap at high bar counts",
+          description: "Thickness of bars and outlines",
+          tip: "Thicker lines are more visible but can overlap",
         },
         {
           label: "Glow Intensity",
@@ -328,24 +396,50 @@ export default function VisualizerSettingsModal({
           min: 0,
           max: 30,
           step: 1,
-          description: "Intensity of the glow effect around bars",
-          tip: "Higher values create a more dramatic glow effect",
+          description: "Soft glow around visuals",
+          tip: "Higher values give a neon effect",
+        },
+        {
+          label: "Opacity",
+          key: "opacity" as keyof VisualizerSettings,
+          min: 0.2,
+          max: 1,
+          step: 0.05,
+          format: (v: number) => `${Math.round(v * 100)}%`,
+          description: "Overall visual opacity",
+          tip: "Lower opacity blends visuals with the background",
+        },
+        {
+          label: "Rotation Speed",
+          key: "rotationSpeed" as keyof VisualizerSettings,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          format: (v: number) => `${(v * 60).toFixed(0)}°/s`,
+          description: "Automatic rotation",
+          tip: "0 = stationary, 1 ≈ 1 rev/sec",
         },
       ],
     },
-  ];
+  ] as const;
 
   const colorSettings = [
     {
       label: "Inner Gradient Color",
       key: "startColor" as keyof VisualizerSettings,
-      description: "Color at the center of each bar",
+      description: "Color at the base",
       category: "Bar Colors",
     },
     {
       label: "Outer Gradient Color",
       key: "endColor" as keyof VisualizerSettings,
-      description: "Color at the tips of each bar",
+      description: "Color at the tips",
+      category: "Bar Colors",
+    },
+    {
+      label: "Glow Color",
+      key: "glowColor" as keyof VisualizerSettings,
+      description: "Overrides the glow color (optional)",
       category: "Bar Colors",
     },
     {
@@ -363,9 +457,7 @@ export default function VisualizerSettingsModal({
   ];
 
   const groupedColorSettings = colorSettings.reduce((acc, setting) => {
-    if (!acc[setting.category]) {
-      acc[setting.category] = [];
-    }
+    if (!acc[setting.category]) acc[setting.category] = [];
     acc[setting.category].push(setting);
     return acc;
   }, {} as Record<string, typeof colorSettings>);
@@ -438,7 +530,7 @@ export default function VisualizerSettingsModal({
 
             <div className="p-6 flex-1 overflow-y-auto">
               <Tabs defaultValue="presets" className="w-full">
-                <TabsList className="grid grid-cols-3 mb-6 w-full">
+                <TabsList className="grid grid-cols-4 mb-6 w-full">
                   <TabsTrigger
                     value="presets"
                     className="flex items-center gap-2 text-xs transition-all duration-200 cursor-pointer hover:scale-105"
@@ -459,6 +551,13 @@ export default function VisualizerSettingsModal({
                   >
                     <Palette className="h-3 w-3" />
                     Colors
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="effects"
+                    className="flex items-center gap-2 text-xs transition-all duration-200 cursor-pointer hover:scale-105"
+                  >
+                    <Lightbulb className="h-3 w-3" />
+                    Effects
                   </TabsTrigger>
                 </TabsList>
 
@@ -546,7 +645,35 @@ export default function VisualizerSettingsModal({
                   </motion.div>
                 </TabsContent>
 
+                {/* Controls: include shape selection at top */}
                 <TabsContent value="controls" className="space-y-6">
+                  <Card className="p-4">
+                    <Label className="text-sm font-medium mb-2 block">
+                      Shape
+                    </Label>
+                    <Select
+                      value={(settings.shape || "bars") as string}
+                      onValueChange={(v) => {
+                        if (v) {
+                          updateSetting(
+                            "shape",
+                            v as VisualizerSettings["shape"]
+                          );
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a shape" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bars">Bars</SelectItem>
+                        <SelectItem value="dots">Dots</SelectItem>
+                        <SelectItem value="waveform">Waveform</SelectItem>
+                        <SelectItem value="polygon">Polygon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Card>
+
                   {sliderGroups.map((group, groupIndex) => {
                     const IconComponent = group.icon;
                     return (
@@ -555,7 +682,7 @@ export default function VisualizerSettingsModal({
                         className="space-y-4"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: groupIndex * 0.1 }}
+                        transition={{ delay: groupIndex * 0.05 }}
                       >
                         <div className="flex items-center gap-2 mb-4">
                           <IconComponent className="h-4 w-4 text-primary" />
@@ -578,12 +705,13 @@ export default function VisualizerSettingsModal({
                               settingIndex
                             ) => (
                               <motion.div
-                                key={key}
+                                key={String(key)}
                                 className="space-y-3"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{
-                                  delay: groupIndex * 0.1 + settingIndex * 0.05,
+                                  delay:
+                                    groupIndex * 0.05 + settingIndex * 0.03,
                                 }}
                               >
                                 <div className="flex justify-between items-start">
@@ -613,11 +741,11 @@ export default function VisualizerSettingsModal({
                                   >
                                     {format
                                       ? format(settings[key] as number)
-                                      : settings[key]}
+                                      : (settings[key] as string)}
                                   </Badge>
                                 </div>
                                 <Slider
-                                  value={[settings[key] as number]}
+                                  value={[Number(settings[key])]}
                                   min={min}
                                   max={max}
                                   step={step}
@@ -635,6 +763,7 @@ export default function VisualizerSettingsModal({
                   })}
                 </TabsContent>
 
+                {/* Colors (add glowColor control) */}
                 <TabsContent value="colors" className="space-y-6">
                   {Object.entries(groupedColorSettings).map(
                     ([category, categorySettings], categoryIndex) => (
@@ -654,7 +783,7 @@ export default function VisualizerSettingsModal({
                           {categorySettings.map(
                             ({ label, key, description }, settingIndex) => (
                               <motion.div
-                                key={key}
+                                key={String(key)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{
@@ -677,9 +806,10 @@ export default function VisualizerSettingsModal({
                                         className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-all duration-200"
                                         onClick={() =>
                                           setColorInputVisible(
-                                            colorInputVisible === key
+                                            colorInputVisible ===
+                                              (key as string)
                                               ? null
-                                              : key
+                                              : (key as string)
                                           )
                                         }
                                         whileHover={{ scale: 1.05 }}
@@ -689,14 +819,14 @@ export default function VisualizerSettingsModal({
                                           variant="outline"
                                           className="text-xs font-mono"
                                         >
-                                          {settings[key] as string}
+                                          {(settings[key] as string) ?? "none"}
                                         </Badge>
                                         <motion.div
                                           className="w-8 h-8 rounded-md border-2 border-border shadow-sm cursor-pointer"
                                           style={{
-                                            backgroundColor: settings[
-                                              key
-                                            ] as string,
+                                            backgroundColor:
+                                              (settings[key] as string) ||
+                                              "transparent",
                                           }}
                                           whileHover={{ scale: 1.1 }}
                                           whileTap={{ scale: 0.95 }}
@@ -719,18 +849,23 @@ export default function VisualizerSettingsModal({
                                           <div className="flex gap-2">
                                             <Input
                                               type="text"
-                                              value={settings[key] as string}
+                                              value={
+                                                (settings[key] as string) ?? ""
+                                              }
                                               onChange={(e) =>
                                                 updateSetting(
                                                   key,
-                                                  e.target.value
+                                                  e.target.value || null
                                                 )
                                               }
-                                              placeholder="Enter hex color (e.g., #ff0000)"
+                                              placeholder="Enter hex color (e.g., #ff0000) or leave empty"
                                               className="h-10 flex-1 font-mono text-sm"
                                             />
                                             <ColorPickerButton
-                                              value={settings[key] as string}
+                                              value={
+                                                (settings[key] as string) ??
+                                                "#ffffff"
+                                              }
                                               onChange={(color) =>
                                                 updateSetting(key, color)
                                               }
@@ -748,6 +883,65 @@ export default function VisualizerSettingsModal({
                       </motion.div>
                     )
                   )}
+                </TabsContent>
+
+                {/* Effects tab with toggles */}
+                <TabsContent value="effects" className="space-y-4">
+                  <Card className="p-4">
+                    <div className="space-y-4">
+                      {[
+                        {
+                          key: "dynamicColors" as const,
+                          label: "Dynamic Colors",
+                          desc: "Blend colors based on audio intensity",
+                        },
+                        {
+                          key: "rainbowMode" as const,
+                          label: "Rainbow Mode",
+                          desc: "Cycle hues across the ring",
+                        },
+                        {
+                          key: "showPeaks" as const,
+                          label: "Show Peaks",
+                          desc: "Display peak markers with gentle decay",
+                        },
+                        {
+                          key: "animateBackground" as const,
+                          label: "Animated Background",
+                          desc: "Subtle background gradient animation",
+                        },
+                      ].map(({ key, label, desc }) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="pr-4">
+                            <Label className="text-sm font-medium">
+                              {label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {desc}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={Boolean(settings[key])}
+                            onCheckedChange={(v) => updateSetting(key, v)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  <Separator className="my-4" />
+
+                  <Button
+                    variant="outline"
+                    onClick={resetToDefaults}
+                    className="w-full bg-transparent"
+                  >
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Reset to Default Settings
+                  </Button>
                 </TabsContent>
               </Tabs>
             </div>

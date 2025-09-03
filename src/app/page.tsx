@@ -30,6 +30,16 @@ const DEFAULT_SETTINGS: VisualizerSettings = {
   endColor: "#8b5cf6",
   bgStartColor: "#0f172a",
   bgEndColor: "#000000",
+  // new
+  shape: "bars",
+  rotationSpeed: 0,
+  barSpacing: 4,
+  opacity: 1,
+  glowColor: null,
+  dynamicColors: false,
+  rainbowMode: false,
+  showPeaks: true,
+  animateBackground: true,
 };
 
 export default function VisualizerLabPage() {
@@ -40,7 +50,9 @@ export default function VisualizerLabPage() {
     permissionError,
     createAnalyser,
     start,
-  } = useSharedMic({ autoStart: true });
+  } = useSharedMic({
+    autoStart: true,
+  });
 
   const [count, setCount] = useState(1);
   const [settingsList, setSettingsList] = useState<VisualizerSettings[]>([
@@ -107,7 +119,9 @@ export default function VisualizerLabPage() {
             transition={{
               duration: 1.5,
               repeat:
-                micStatusLabel === "Live" || permissionError ? Infinity : 0,
+                micStatusLabel === "Live" || permissionError
+                  ? Number.POSITIVE_INFINITY
+                  : 0,
             }}
           >
             <Badge className="text-xs md:text-sm" variant={micStatusVariant}>
