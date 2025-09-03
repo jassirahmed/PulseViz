@@ -22,11 +22,24 @@ export type VisualizerSettings = {
   bgStartColor: string;
   bgEndColor: string;
 };
-
+const DEFAULT_SETTINGS: VisualizerSettings = {
+  bars: 60,
+  barLength: 10,
+  radiusMultiplier: 0.3,
+  sensitivity: 2,
+  maxBarHeight: 20,
+  fftSize: 512,
+  lineWidth: 4,
+  shadowBlur: 15,
+  startColor: "#06b6d4",
+  endColor: "#8b5cf6",
+  bgStartColor: "#0f172a",
+  bgEndColor: "#000000",
+};
 export function VisualizerInstance({
   analyser,
   isMuted,
-  settings,
+  settings = DEFAULT_SETTINGS,
   onOpenSettings,
   onSettingsChange,
 }: {
@@ -67,24 +80,26 @@ export function VisualizerInstance({
 
     const draw = () => {
       rafRef.current = requestAnimationFrame(draw);
-      if (analyser.fftSize !== settings.fftSize)
-        analyser.fftSize = settings.fftSize;
+      if (analyser.fftSize !== settings?.fftSize)
+        analyser.fftSize = settings?.fftSize;
 
       const w = size;
       const h = size;
       const cx = w / 2;
       const cy = h / 2;
-      const radius = Math.min(w, h) * settings.radiusMultiplier;
-      const angleStep = (Math.PI * 2) / settings.bars;
+      const radius = Math.min(w, h) * settings?.radiusMultiplier;
+      const angleStep = (Math.PI * 2) / settings?.bars;
 
       analyser.getByteFrequencyData(dataArray);
       ctx.clearRect(0, 0, w, h);
 
-      for (let i = 0; i < settings.bars; i++) {
+      for (let i = 0; i < settings?.bars; i++) {
         const raw = dataArray[i % dataArray.length];
         const normalized =
-          Math.pow(raw / 255, 2) * settings.maxBarHeight * settings.sensitivity;
-        const barHeight = Math.max(settings.barLength, normalized);
+          Math.pow(raw / 255, 2) *
+          settings?.maxBarHeight *
+          settings?.sensitivity;
+        const barHeight = Math.max(settings?.barLength, normalized);
         const angle = i * angleStep;
 
         const x = cx + Math.cos(angle) * radius;
@@ -93,14 +108,14 @@ export function VisualizerInstance({
         const yEnd = cy + Math.sin(angle) * (radius + barHeight);
 
         const gradient = ctx.createLinearGradient(x, y, xEnd, yEnd);
-        gradient.addColorStop(0, settings.startColor);
-        gradient.addColorStop(1, settings.endColor);
+        gradient.addColorStop(0, settings?.startColor);
+        gradient.addColorStop(1, settings?.endColor);
 
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = settings.lineWidth;
+        ctx.lineWidth = settings?.lineWidth;
         ctx.lineCap = "round";
-        ctx.shadowBlur = settings.shadowBlur;
-        ctx.shadowColor = settings.endColor;
+        ctx.shadowBlur = settings?.shadowBlur;
+        ctx.shadowColor = settings?.endColor;
 
         ctx.beginPath();
         ctx.moveTo(x, y);
@@ -176,7 +191,7 @@ export function VisualizerInstance({
               role="button"
               aria-label="Copy settings JSON"
               style={{
-                background: `linear-gradient(135deg, ${settings.bgStartColor}, ${settings.bgEndColor})`,
+                background: `linear-gradient(135deg, ${settings?.bgStartColor}, ${settings?.bgEndColor})`,
               }}
             >
               {/* Status Overlays */}
